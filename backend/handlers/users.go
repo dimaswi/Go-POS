@@ -10,13 +10,28 @@ import (
 )
 
 func GetUsers(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	offset := (page - 1) * limit
+
+	var total int64
+	database.DB.Model(&models.User{}).Count(&total)
+
 	var users []models.User
-	if err := database.DB.Preload("Role").Preload("Store").Find(&users).Error; err != nil {
+	if err := database.DB.Preload("Role").Preload("Store").Offset(offset).Limit(limit).Find(&users).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": users})
+	c.JSON(http.StatusOK, gin.H{
+		"data": users,
+		"pagination": gin.H{
+			"current_page": page,
+			"per_page":     limit,
+			"total":        total,
+			"total_pages":  (total + int64(limit) - 1) / int64(limit),
+		},
+	})
 }
 
 func GetUser(c *gin.Context) {

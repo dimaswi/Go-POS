@@ -4,18 +4,34 @@ import (
 	"net/http"
 	"starter/backend/database"
 	"starter/backend/models"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetRoles(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	offset := (page - 1) * limit
+
+	var total int64
+	database.DB.Model(&models.Role{}).Count(&total)
+
 	var roles []models.Role
-	if err := database.DB.Preload("Permissions").Find(&roles).Error; err != nil {
+	if err := database.DB.Preload("Permissions").Offset(offset).Limit(limit).Find(&roles).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": roles})
+	c.JSON(http.StatusOK, gin.H{
+		"data": roles,
+		"pagination": gin.H{
+			"current_page": page,
+			"per_page":     limit,
+			"total":        total,
+			"total_pages":  (total + int64(limit) - 1) / int64(limit),
+		},
+	})
 }
 
 func GetRole(c *gin.Context) {

@@ -46,6 +46,13 @@ interface DataTableProps<TData, TValue> {
   pageSize?: number
   customFilters?: React.ReactNode
   mobileHiddenColumns?: string[]
+  // Server-side pagination props
+  serverPagination?: {
+    page: number
+    totalPages: number
+    total: number
+    onPageChange: (page: number) => void
+  }
 }
 
 export function DataTable<TData, TValue>({
@@ -58,6 +65,7 @@ export function DataTable<TData, TValue>({
   pageSize = 10,
   customFilters,
   mobileHiddenColumns = [],
+  serverPagination,
 }: DataTableProps<TData, TValue>) {
   const isMobile = useIsMobile()
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -211,19 +219,28 @@ export function DataTable<TData, TValue>({
       {showPagination && (
         <div className="flex items-center justify-between gap-2 p-3 sm:p-4 border-t">
           <div className="text-xs text-muted-foreground hidden sm:block">
-            {table.getFilteredRowModel().rows.length} item
+            {serverPagination ? serverPagination.total : table.getFilteredRowModel().rows.length} item
           </div>
           <div className="flex items-center gap-2 mx-auto sm:mx-0">
             <div className="text-xs font-medium whitespace-nowrap">
-              {table.getState().pagination.pageIndex + 1}/{table.getPageCount()}
+              {serverPagination 
+                ? `${serverPagination.page}/${serverPagination.totalPages}`
+                : `${table.getState().pagination.pageIndex + 1}/${table.getPageCount()}`
+              }
             </div>
             <div className="flex items-center gap-1">
               <Button
                 variant="outline"
                 size="icon"
                 className="h-7 w-7"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
+                onClick={() => {
+                  if (serverPagination) {
+                    serverPagination.onPageChange(serverPagination.page - 1)
+                  } else {
+                    table.previousPage()
+                  }
+                }}
+                disabled={serverPagination ? serverPagination.page <= 1 : !table.getCanPreviousPage()}
               >
                 <ChevronLeft className="h-3 w-3" />
               </Button>
@@ -231,8 +248,14 @@ export function DataTable<TData, TValue>({
                 variant="outline"
                 size="icon"
                 className="h-7 w-7"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
+                onClick={() => {
+                  if (serverPagination) {
+                    serverPagination.onPageChange(serverPagination.page + 1)
+                  } else {
+                    table.nextPage()
+                  }
+                }}
+                disabled={serverPagination ? serverPagination.page >= serverPagination.totalPages : !table.getCanNextPage()}
               >
                 <ChevronRight className="h-3 w-3" />
               </Button>

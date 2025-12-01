@@ -31,6 +31,14 @@ export default function InventoryPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [selectedStore, setSelectedStore] = useState<string>('all');
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('all');
+  
+  // Pagination states
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
   useEffect(() => {
     setPageTitle('Manajemen Inventori');
@@ -54,22 +62,38 @@ export default function InventoryPage() {
     }
   };
 
-  const loadData = async () => {
+  const loadData = async (page = 1) => {
     try {
       if (activeTab === 'store') {
-        const params: any = { limit: 100 };
+        const params: any = { page, limit: pagination.limit };
         if (selectedStore !== 'all') {
           params.store_id = selectedStore;
         }
         const storeRes = await inventoryApi.getStoreInventory(params);
         setStoreInventory(storeRes.data.data || []);
+        if (storeRes.data.pagination) {
+          setPagination({
+            page: storeRes.data.pagination.current_page || page,
+            limit: storeRes.data.pagination.per_page || 10,
+            total: storeRes.data.pagination.total || 0,
+            totalPages: storeRes.data.pagination.total_pages || 1,
+          });
+        }
       } else {
-        const params: any = { limit: 100 };
+        const params: any = { page, limit: pagination.limit };
         if (selectedWarehouse !== 'all') {
           params.warehouse_id = selectedWarehouse;
         }
         const warehouseRes = await inventoryApi.getWarehouseInventory(params);
         setWarehouseInventory(warehouseRes.data.data || []);
+        if (warehouseRes.data.pagination) {
+          setPagination({
+            page: warehouseRes.data.pagination.current_page || page,
+            limit: warehouseRes.data.pagination.per_page || 10,
+            total: warehouseRes.data.pagination.total || 0,
+            totalPages: warehouseRes.data.pagination.total_pages || 1,
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to load inventory:', error);
@@ -157,6 +181,12 @@ export default function InventoryPage() {
               searchPlaceholder="Cari..."
               pageSize={10}
               mobileHiddenColumns={["warehouse", "min_stock", "max_stock", "updated_at", "select"]}
+              serverPagination={{
+                page: pagination.page,
+                totalPages: pagination.totalPages,
+                total: pagination.total,
+                onPageChange: (newPage) => loadData(newPage)
+              }}
             />
           ) : (
             <DataTable
@@ -165,6 +195,12 @@ export default function InventoryPage() {
               searchPlaceholder="Cari..."
               pageSize={10}
               mobileHiddenColumns={["store", "min_stock", "max_stock", "updated_at", "select"]}
+              serverPagination={{
+                page: pagination.page,
+                totalPages: pagination.totalPages,
+                total: pagination.total,
+                onPageChange: (newPage) => loadData(newPage)
+              }}
             />
           )}
         </CardContent>

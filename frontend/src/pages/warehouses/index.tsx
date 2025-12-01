@@ -25,17 +25,31 @@ export default function WarehousesIndex() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [warehouseToDelete, setWarehouseToDelete] = useState<number | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
   useEffect(() => {
     setPageTitle("Manajemen Gudang");
     loadWarehouses();
   }, []);
 
-  const loadWarehouses = async () => {
+  const loadWarehouses = async (page = 1) => {
     setLoading(true);
     try {
-      const response = await warehousesApi.getAll();
-      setWarehouses(response.data.data);
+      const response = await warehousesApi.getAll({ page, limit: pagination.limit });
+      setWarehouses(response.data.data || []);
+      if (response.data.pagination) {
+        setPagination({
+          page: response.data.pagination.current_page || page,
+          limit: response.data.pagination.per_page || 10,
+          total: response.data.pagination.total || 0,
+          totalPages: response.data.pagination.total_pages || 1,
+        });
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -117,6 +131,12 @@ export default function WarehousesIndex() {
             data={warehouses} 
             searchPlaceholder="Cari..."
             mobileHiddenColumns={["address", "phone", "type", "store", "manager", "status", "created_at", "select"]}
+            serverPagination={{
+              page: pagination.page,
+              totalPages: pagination.totalPages,
+              total: pagination.total,
+              onPageChange: (newPage) => loadWarehouses(newPage)
+            }}
           />
         </CardContent>
       </Card>

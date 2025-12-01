@@ -25,17 +25,31 @@ export default function CategoriesIndex() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
   useEffect(() => {
     setPageTitle("Categories Management");
     loadCategories();
   }, []);
 
-  const loadCategories = async () => {
+  const loadCategories = async (page = 1) => {
     setLoading(true);
     try {
-      const response = await categoriesApi.getAll();
-      setCategories(response.data.data);
+      const response = await categoriesApi.getAll({ page, limit: pagination.limit });
+      setCategories(response.data.data || []);
+      if (response.data.pagination) {
+        setPagination({
+          page: response.data.pagination.current_page || page,
+          limit: response.data.pagination.per_page || 10,
+          total: response.data.pagination.total || 0,
+          totalPages: response.data.pagination.total_pages || 1,
+        });
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -117,6 +131,12 @@ export default function CategoriesIndex() {
             data={categories}
             searchPlaceholder="Cari..."
             mobileHiddenColumns={["code", "description", "created_at", "select"]}
+            serverPagination={{
+              page: pagination.page,
+              totalPages: pagination.totalPages,
+              total: pagination.total,
+              onPageChange: (newPage) => loadCategories(newPage)
+            }}
           />
         </CardContent>
       </Card>

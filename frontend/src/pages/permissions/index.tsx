@@ -19,16 +19,31 @@ export default function PermissionsPage() {
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [permissionToDelete, setPermissionToDelete] = useState<number | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
   useEffect(() => {
     setPageTitle('Permissions');
     loadPermissions();
   }, []);
 
-  const loadPermissions = async () => {
+  const loadPermissions = async (page = 1) => {
+    setLoading(true);
     try {
-      const response = await permissionsApi.getAll();
-      setPermissions(response.data.data);
+      const response = await permissionsApi.getAll({ page, limit: pagination.limit });
+      setPermissions(response.data.data || []);
+      if (response.data.pagination) {
+        setPagination({
+          page: response.data.pagination.current_page || page,
+          limit: response.data.pagination.per_page || 10,
+          total: response.data.pagination.total || 0,
+          totalPages: response.data.pagination.total_pages || 1,
+        });
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -119,6 +134,12 @@ export default function PermissionsPage() {
             searchPlaceholder="Cari..."
             pageSize={10}
             mobileHiddenColumns={["description", "module", "created_at", "select"]}
+            serverPagination={{
+              page: pagination.page,
+              totalPages: pagination.totalPages,
+              total: pagination.total,
+              onPageChange: (newPage) => loadPermissions(newPage)
+            }}
           />
         </CardContent>
       </Card>

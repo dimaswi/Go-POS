@@ -191,16 +191,31 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Product deleted successfully"})
 }
 
-// GetCategories retrieves all categories
+// GetCategories retrieves all categories with pagination
 func (h *ProductHandler) GetCategories(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	offset := (page - 1) * limit
+
+	var total int64
+	h.DB.Model(&models.Category{}).Count(&total)
+
 	var categories []models.Category
 
-	if err := h.DB.Preload("Parent").Preload("Children").Find(&categories).Error; err != nil {
+	if err := h.DB.Preload("Parent").Preload("Children").Offset(offset).Limit(limit).Find(&categories).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": categories})
+	c.JSON(http.StatusOK, gin.H{
+		"data": categories,
+		"pagination": gin.H{
+			"current_page": page,
+			"per_page":     limit,
+			"total":        total,
+			"total_pages":  (total + int64(limit) - 1) / int64(limit),
+		},
+	})
 }
 
 // CreateCategory creates a new category

@@ -19,11 +19,26 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (page = 1) => {
+    setLoading(true);
     try {
-      const usersRes = await usersApi.getAll();
-      setUsers(usersRes.data.data);
+      const usersRes = await usersApi.getAll({ page, limit: pagination.limit });
+      setUsers(usersRes.data.data || []);
+      if (usersRes.data.pagination) {
+        setPagination({
+          page: usersRes.data.pagination.current_page || page,
+          limit: usersRes.data.pagination.per_page || 10,
+          total: usersRes.data.pagination.total || 0,
+          totalPages: usersRes.data.pagination.total_pages || 1,
+        });
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -33,7 +48,7 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, pagination.limit]);
 
   useEffect(() => {
     setPageTitle('Pengguna');
@@ -119,6 +134,12 @@ export default function UsersPage() {
             searchPlaceholder="Cari..."
             pageSize={10}
             mobileHiddenColumns={["email", "role.name", "store.name", "is_active", "select"]}
+            serverPagination={{
+              page: pagination.page,
+              totalPages: pagination.totalPages,
+              total: pagination.total,
+              onPageChange: (newPage) => loadData(newPage)
+            }}
           />
         </CardContent>
       </Card>

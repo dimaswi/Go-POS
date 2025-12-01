@@ -25,6 +25,7 @@ export default function PurchaseOrdersIndex() {
     page: 1,
     limit: 10,
     total: 0,
+    totalPages: 0,
   });
 
   const loadData = async (page = 1) => {
@@ -39,6 +40,7 @@ export default function PurchaseOrdersIndex() {
         page: response.data.pagination.current_page,
         limit: response.data.pagination.per_page,
         total: response.data.pagination.total,
+        totalPages: response.data.pagination.total_pages,
       });
     } catch (error) {
       toast({
@@ -92,6 +94,12 @@ export default function PurchaseOrdersIndex() {
             searchPlaceholder="Cari..."
             pageSize={10}
             mobileHiddenColumns={["supplier", "warehouse", "total", "created_at", "select"]}
+            serverPagination={{
+              page: pagination.page,
+              totalPages: pagination.totalPages,
+              total: pagination.total,
+              onPageChange: (newPage) => loadData(newPage)
+            }}
           />
         </CardContent>
       </Card>

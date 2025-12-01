@@ -19,11 +19,26 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<number | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (page = 1) => {
+    setLoading(true);
     try {
-      const response = await customersApi.getAll();
+      const response = await customersApi.getAll({ page, limit: pagination.limit });
       setCustomers(response.data.data || []);
+      if (response.data.pagination) {
+        setPagination({
+          page: response.data.pagination.current_page || page,
+          limit: response.data.pagination.per_page || 10,
+          total: response.data.pagination.total || 0,
+          totalPages: response.data.pagination.total_pages || 1,
+        });
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -33,7 +48,7 @@ export default function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, pagination.limit]);
 
   useEffect(() => {
     setPageTitle('Pelanggan');
@@ -121,6 +136,12 @@ export default function CustomersPage() {
             data={customers}
             searchPlaceholder="Cari..."
             mobileHiddenColumns={["phone", "email", "address", "loyalty_points", "select"]}
+            serverPagination={{
+              page: pagination.page,
+              totalPages: pagination.totalPages,
+              total: pagination.total,
+              onPageChange: (newPage) => loadData(newPage)
+            }}
           />
         </CardContent>
       </Card>

@@ -25,6 +25,7 @@ export default function ProductsIndex() {
     page: 1,
     limit: 10,
     total: 0,
+    totalPages: 0,
   });
   const search = "";
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -53,7 +54,8 @@ export default function ProductsIndex() {
       setProducts(response.data.data);
       setPagination((prev) => ({
         ...prev,
-        total: response.data.pagination?.total || response.data.meta?.total || 0,
+        total: response.data.pagination?.total || 0,
+        totalPages: response.data.pagination?.total_pages || 1,
       }));
     } catch (error: any) {
       toast({
@@ -136,6 +138,12 @@ export default function ProductsIndex() {
             columns={columns} 
             data={products} 
             mobileHiddenColumns={["sku", "category", "unit", "cost_price", "selling_price", "is_active", "created_at", "select"]}
+            serverPagination={{
+              page: pagination.page,
+              totalPages: pagination.totalPages,
+              total: pagination.total,
+              onPageChange: (newPage) => setPagination(prev => ({ ...prev, page: newPage }))
+            }}
           />
         </CardContent>
       </Card>

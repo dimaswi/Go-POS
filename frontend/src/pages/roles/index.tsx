@@ -19,16 +19,31 @@ export default function RolesPage() {
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<number | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
   useEffect(() => {
     setPageTitle('Peran');
     loadRoles();
   }, []);
 
-  const loadRoles = async () => {
+  const loadRoles = async (page = 1) => {
+    setLoading(true);
     try {
-      const response = await rolesApi.getAll();
-      setRoles(response.data.data);
+      const response = await rolesApi.getAll({ page, limit: pagination.limit });
+      setRoles(response.data.data || []);
+      if (response.data.pagination) {
+        setPagination({
+          page: response.data.pagination.current_page || page,
+          limit: response.data.pagination.per_page || 10,
+          total: response.data.pagination.total || 0,
+          totalPages: response.data.pagination.total_pages || 1,
+        });
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -119,6 +134,12 @@ export default function RolesPage() {
             searchPlaceholder="Cari..."
             pageSize={10}
             mobileHiddenColumns={["description", "permissions", "created_at", "select"]}
+            serverPagination={{
+              page: pagination.page,
+              totalPages: pagination.totalPages,
+              total: pagination.total,
+              onPageChange: (newPage) => loadRoles(newPage)
+            }}
           />
         </CardContent>
       </Card>

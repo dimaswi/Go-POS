@@ -19,11 +19,26 @@ export default function SuppliersPage() {
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [supplierToDelete, setSupplierToDelete] = useState<number | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (page = 1) => {
+    setLoading(true);
     try {
-      const suppliersRes = await suppliersApi.getAll();
-      setSuppliers(suppliersRes.data.data);
+      const suppliersRes = await suppliersApi.getAll({ page, limit: pagination.limit });
+      setSuppliers(suppliersRes.data.data || []);
+      if (suppliersRes.data.pagination) {
+        setPagination({
+          page: suppliersRes.data.pagination.page || page,
+          limit: suppliersRes.data.pagination.limit || 10,
+          total: suppliersRes.data.pagination.total || 0,
+          totalPages: suppliersRes.data.pagination.pages || 1,
+        });
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -33,7 +48,7 @@ export default function SuppliersPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, pagination.limit]);
 
   useEffect(() => {
     setPageTitle('Pemasok');
@@ -121,6 +136,12 @@ export default function SuppliersPage() {
             data={suppliers}
             searchPlaceholder="Cari..."
             mobileHiddenColumns={["contact", "address", "status", "select"]}
+            serverPagination={{
+              page: pagination.page,
+              totalPages: pagination.totalPages,
+              total: pagination.total,
+              onPageChange: (newPage) => loadData(newPage)
+            }}
           />
         </CardContent>
       </Card>

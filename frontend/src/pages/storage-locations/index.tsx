@@ -27,6 +27,12 @@ export default function StorageLocationsPage() {
   const [warehouseFilter, setWarehouseFilter] = useState<string>('all')
   const [storeFilter, setStoreFilter] = useState<string>('all')
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  })
 
   const columns = useMemo(() => createStorageLocationColumns(setDeleteId), [])
 
@@ -52,11 +58,12 @@ export default function StorageLocationsPage() {
     }
   }
 
-  const loadLocations = async () => {
+  const loadLocations = async (page = 1) => {
     try {
       setLoading(true)
       const params: Record<string, any> = {
-        limit: 100, // Load all for client-side filtering
+        page,
+        limit: pagination.limit,
       }
       if (typeFilter !== 'all') params.type = typeFilter
       if (warehouseFilter !== 'all') params.warehouse_id = warehouseFilter
@@ -64,6 +71,14 @@ export default function StorageLocationsPage() {
 
       const response = await storageLocationsApi.getAll(params)
       setLocations(response.data.data || [])
+      if (response.data.pagination) {
+        setPagination({
+          page: response.data.pagination.current_page || page,
+          limit: response.data.pagination.per_page || 10,
+          total: response.data.pagination.total || 0,
+          totalPages: response.data.pagination.total_pages || 1,
+        })
+      }
     } catch (error) {
       console.error('Failed to load locations:', error)
       toast({ title: 'Error', description: 'Gagal memuat data lokasi', variant: 'destructive' })
@@ -203,6 +218,12 @@ export default function StorageLocationsPage() {
             searchPlaceholder="Cari..."
             pageSize={10}
             mobileHiddenColumns={["warehouse", "store", "capacity", "created_at", "select"]}
+            serverPagination={{
+              page: pagination.page,
+              totalPages: pagination.totalPages,
+              total: pagination.total,
+              onPageChange: (newPage) => loadLocations(newPage)
+            }}
           />
         </CardContent>
       </Card>
