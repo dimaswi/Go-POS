@@ -29,15 +29,15 @@ func main() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
-	// Run migrations
-	if err := database.Migrate(); err != nil {
-		log.Fatal("Failed to migrate database:", err)
-	}
+	// Skip auto migration - restore database manually
+	// if err := database.Migrate(); err != nil {
+	// 	log.Fatal("Failed to migrate database:", err)
+	// }
 
-	// Seed default data (admin user, roles, permissions, settings)
-	if err := database.SeedData(); err != nil {
-		log.Printf("Warning: Failed to seed data: %v", err)
-	}
+	// Skip seeding - data will come from restore
+	// if err := database.SeedData(); err != nil {
+	// 	log.Printf("Warning: Failed to seed data: %v", err)
+	// }
 
 	// Set Gin mode from config
 	gin.SetMode(cfg.GinMode)
