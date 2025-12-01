@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,16 @@ import {
   Sparkles,
   Minimize2,
   Maximize2,
+  EyeOff,
+  Eye,
+  GripVertical,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Message {
   id: string;
@@ -25,6 +34,11 @@ interface Message {
   content: string;
   timestamp: Date;
   intent?: string;
+}
+
+interface Position {
+  x: number;
+  y: number;
 }
 
 const suggestedQuestions = [
@@ -35,11 +49,30 @@ const suggestedQuestions = [
   "Produk terlaris minggu ini",
 ];
 
+const getDefaultPosition = (): Position => {
+  const saved = localStorage.getItem("ai-chat-position");
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return { x: window.innerWidth - 80, y: window.innerHeight - 100 };
+    }
+  }
+  return { x: window.innerWidth - 80, y: window.innerHeight - 100 };
+};
+
 export function AIChatBubble() {
   const location = useLocation();
   const { isAuthenticated } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
+  const [isHidden, setIsHidden] = useState(() => {
+    return localStorage.getItem("ai-chat-hidden") === "true";
+  });
   const [isExpanded, setIsExpanded] = useState(false);
+  const [position, setPosition] = useState<Position>(getDefaultPosition);
+  const [isDragging, setIsDragging] = useState(false);
+  const [hasDragged, setHasDragged] = useState(false);
+  const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -52,6 +85,84 @@ export function AIChatBubble() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const bubbleRef = useRef<HTMLButtonElement>(null);
+
+  // Save position to localStorage
+  useEffect(() => {
+    if (!isDragging) {
+      localStorage.setItem("ai-chat-position", JSON.stringify(position));
+    }
+  }, [position, isDragging]);
+
+  // Handle drag
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    setHasDragged(false);
+    setDragOffset({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    });
+  }, [position]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging) return;
+    
+    setHasDragged(true);
+    const newX = Math.max(28, Math.min(window.innerWidth - 28, e.clientX - dragOffset.x));
+    const newY = Math.max(28, Math.min(window.innerHeight - 28, e.clientY - dragOffset.y));
+    
+    setPosition({ x: newX, y: newY });
+  }, [isDragging, dragOffset]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+    // Reset hasDragged after a short delay to allow click handler to check it
+    setTimeout(() => setHasDragged(false), 100);
+  }, []);
+
+  // Touch handlers for mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setIsDragging(true);
+    setHasDragged(false);
+    setDragOffset({
+      x: touch.clientX - position.x,
+      y: touch.clientY - position.y,
+    });
+  }, [position]);
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging) return;
+    setHasDragged(true);
+    const touch = e.touches[0];
+    
+    const newX = Math.max(28, Math.min(window.innerWidth - 28, touch.clientX - dragOffset.x));
+    const newY = Math.max(28, Math.min(window.innerHeight - 28, touch.clientY - dragOffset.y));
+    
+    setPosition({ x: newX, y: newY });
+  }, [isDragging, dragOffset]);
+
+  // Add/remove event listeners for drag
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener("touchmove", handleTouchMove);
+      window.addEventListener("touchend", handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleMouseUp);
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove]);
+
+  // Save hidden state to localStorage
+  useEffect(() => {
+    localStorage.setItem("ai-chat-hidden", isHidden.toString());
+  }, [isHidden]);
 
   // Auto scroll to bottom when new messages
   useEffect(() => {
@@ -71,6 +182,33 @@ export function AIChatBubble() {
   const isPOSPage = location.pathname.startsWith("/pos");
   if (!isAuthenticated || isPOSPage) {
     return null;
+  }
+
+  // Show mini button to unhide when hidden
+  if (isHidden) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={() => setIsHidden(false)}
+              variant="outline"
+              className="fixed h-10 w-10 rounded-full shadow-lg z-50 bg-background/80 backdrop-blur-sm border-2"
+              style={{
+                left: position.x - 20,
+                top: position.y - 20,
+              }}
+              size="icon"
+            >
+              <Eye className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            <p>Tampilkan AI Chat</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   }
 
   const sendMessage = async (message: string) => {
@@ -132,14 +270,33 @@ export function AIChatBubble() {
     <>
       {/* Chat Bubble Button */}
       {!isOpen && (
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-          size="icon"
+        <div
+          className="fixed z-50 group"
+          style={{
+            left: position.x - 28,
+            top: position.y - 28,
+          }}
         >
-          <MessageCircle className="h-6 w-6" />
-          <span className="absolute -top-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />
-        </Button>
+          <Button
+            ref={bubbleRef}
+            onClick={() => !hasDragged && setIsOpen(true)}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+            className={cn(
+              "h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transition-transform",
+              isDragging && "scale-110 cursor-grabbing",
+              !isDragging && "cursor-grab"
+            )}
+            size="icon"
+          >
+            <MessageCircle className="h-6 w-6" />
+            <span className="absolute -top-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />
+          </Button>
+          {/* Drag indicator */}
+          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-muted-foreground whitespace-nowrap bg-background/80 px-2 py-0.5 rounded">
+            <GripVertical className="h-3 w-3 inline mr-1" />Drag
+          </div>
+        </div>
       )}
 
       {/* Chat Window */}
@@ -165,6 +322,26 @@ export function AIChatBubble() {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setIsHidden(true);
+                        setIsOpen(false);
+                      }}
+                      className="h-8 w-8 text-white hover:bg-white/20"
+                    >
+                      <EyeOff className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Sembunyikan Chat</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <Button
                 variant="ghost"
                 size="icon"

@@ -276,8 +276,8 @@ export const authApi = {
 };
 
 export const usersApi = {
-  getAll: () => 
-    api.get<{ data: User[] }>('/users'),
+  getAll: (params?: any) => 
+    api.get<{ data: User[]; pagination?: any }>('/users', { params }),
   
   getById: (id: number) => 
     api.get<{ data: User }>(`/users/${id}`),
@@ -293,8 +293,8 @@ export const usersApi = {
 };
 
 export const rolesApi = {
-  getAll: () => 
-    api.get('/roles'),
+  getAll: (params?: any) => 
+    api.get<{ data: Role[]; pagination?: any }>('/roles', { params }),
   
   getById: (id: number) => 
     api.get(`/roles/${id}`),
@@ -310,8 +310,8 @@ export const rolesApi = {
 };
 
 export const permissionsApi = {
-  getAll: () => 
-    api.get('/permissions'),
+  getAll: (params?: any) => 
+    api.get<{ data: Permission[]; pagination?: any }>('/permissions', { params }),
   
   getById: (id: number) => 
     api.get(`/permissions/${id}`),
@@ -336,7 +336,7 @@ export const settingsApi = {
 
 export const storesApi = {
   getAll: (params?: any) => 
-    api.get<{ data: Store[] }>('/stores', { params }),
+    api.get<{ data: Store[]; pagination?: any }>('/stores', { params }),
   
   getById: (id: number) => 
     api.get<{ data: Store }>(`/stores/${id}`),
@@ -357,7 +357,7 @@ export const storesApi = {
 // Suppliers API
 export const suppliersApi = {
   getAll: (params?: any) => 
-    api.get<{ data: Supplier[] }>('/suppliers', { params }),
+    api.get<{ data: Supplier[]; pagination?: any }>('/suppliers', { params }),
   
   getById: (id: number) => 
     api.get<{ data: Supplier }>(`/suppliers/${id}`),
