@@ -18,6 +18,22 @@ func GetPermissions(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": permissions})
 }
 
+func GetPermissionsByModule(c *gin.Context) {
+	var permissions []models.Permission
+	if err := database.DB.Find(&permissions).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Group permissions by module
+	modulePermissions := make(map[string][]models.Permission)
+	for _, permission := range permissions {
+		modulePermissions[permission.Module] = append(modulePermissions[permission.Module], permission)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": modulePermissions})
+}
+
 func GetPermission(c *gin.Context) {
 	id := c.Param("id")
 
@@ -32,7 +48,10 @@ func GetPermission(c *gin.Context) {
 
 type CreatePermissionRequest struct {
 	Name        string `json:"name" binding:"required"`
+	Module      string `json:"module" binding:"required"`
+	Category    string `json:"category" binding:"required"`
 	Description string `json:"description"`
+	Actions     string `json:"actions" binding:"required"` // JSON string of actions
 }
 
 func CreatePermission(c *gin.Context) {
@@ -44,7 +63,10 @@ func CreatePermission(c *gin.Context) {
 
 	permission := models.Permission{
 		Name:        req.Name,
+		Module:      req.Module,
+		Category:    req.Category,
 		Description: req.Description,
+		Actions:     req.Actions,
 	}
 
 	if err := database.DB.Create(&permission).Error; err != nil {
@@ -57,7 +79,10 @@ func CreatePermission(c *gin.Context) {
 
 type UpdatePermissionRequest struct {
 	Name        string `json:"name"`
+	Module      string `json:"module"`
+	Category    string `json:"category"`
 	Description string `json:"description"`
+	Actions     string `json:"actions"`
 }
 
 func UpdatePermission(c *gin.Context) {
@@ -78,8 +103,17 @@ func UpdatePermission(c *gin.Context) {
 	if req.Name != "" {
 		permission.Name = req.Name
 	}
+	if req.Module != "" {
+		permission.Module = req.Module
+	}
+	if req.Category != "" {
+		permission.Category = req.Category
+	}
 	if req.Description != "" {
 		permission.Description = req.Description
+	}
+	if req.Actions != "" {
+		permission.Actions = req.Actions
 	}
 
 	if err := database.DB.Save(&permission).Error; err != nil {

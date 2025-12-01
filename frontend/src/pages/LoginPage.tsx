@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [appName, setAppName] = useState('StarterKits');
 
   useEffect(() => {
-    setPageTitle('Login');
+    setPageTitle('Masuk');
     loadSettings();
   }, []);
 
@@ -51,7 +51,7 @@ export default function LoginPage() {
       login(response.data.token, response.data.user);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed. Please try again.');
+      setError(err.response?.data?.error || 'Login gagal. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -67,9 +67,9 @@ export default function LoginPage() {
             </div>
             <span className="text-lg font-semibold">{appName}</span>
           </div>
-          <CardTitle className="text-xl font-semibold">Sign In</CardTitle>
+          <CardTitle className="text-xl font-semibold">Masuk</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
-            Enter your credentials to access your account
+            Masukkan kredensial Anda untuk mengakses akun
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -87,7 +87,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs font-medium">Password</Label>
+              <Label htmlFor="password" className="text-xs font-medium">Kata Sandi</Label>
               <Input
                 id="password"
                 type="password"
@@ -104,11 +104,11 @@ export default function LoginPage() {
               </div>
             )}
             <Button type="submit" className="w-full h-9 text-sm" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Sedang masuk...' : 'Masuk'}
             </Button>
           </form>
           <div className="mt-4 text-xs text-center text-muted-foreground border-t pt-4">
-            <p className="mb-1.5">Demo credentials</p>
+            <p className="mb-1.5">Kredensial demo</p>
             <div className="font-mono bg-muted/30 p-2 rounded text-[11px]">
               admin@simrs.com / admin123
             </div>

@@ -4,11 +4,11 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: simrs-postgres-dev
+    container_name: pos-postgres-dev
     environment:
-      POSTGRES_USER: simrs
-      POSTGRES_PASSWORD: simrs123
-      POSTGRES_DB: simrs
+      POSTGRES_USER: dimas
+      POSTGRES_PASSWORD: dimas123
+      POSTGRES_DB: pos
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5433:5432"

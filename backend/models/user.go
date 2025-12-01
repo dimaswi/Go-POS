@@ -12,13 +12,15 @@ type User struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	Email     string         `gorm:"uniqueIndex;not null" json:"email"`
-	Username  string         `gorm:"uniqueIndex;not null" json:"username"`
-	Password  string         `gorm:"not null" json:"-"`
-	FullName  string         `json:"full_name"`
+	Email     string         `gorm:"uniqueIndex;not null;size:150" json:"email"`
+	Username  string         `gorm:"uniqueIndex;not null;size:50" json:"username"`
+	Password  string         `gorm:"not null;size:255" json:"-"`
+	FullName  string         `gorm:"size:100" json:"full_name"`
 	IsActive  bool           `gorm:"default:true" json:"is_active"`
-	RoleID    uint           `json:"role_id"`
+	RoleID    uint           `gorm:"not null;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT" json:"role_id"`
 	Role      Role           `gorm:"foreignKey:RoleID" json:"role,omitempty"`
+	StoreID   *uint          `gorm:"index" json:"store_id"`
+	Store     *Store         `gorm:"foreignKey:StoreID" json:"store,omitempty"`
 }
 
 // HashPassword hashes the user password

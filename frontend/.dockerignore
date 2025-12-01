@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build (akan di-build di Docker)
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Docker files
+Dockerfile*
+docker-compose*
+.docker/
+
+# Documentation
+*.md
+docs/
+
+# Tests
+coverage/
+__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx

@@ -9,7 +9,21 @@ import {
   ChevronRight,
   Lock,
   Building2,
-  Settings
+  Settings,
+  Store,
+  Package,
+  Warehouse,
+  Layers3,
+  Package2,
+  ShoppingCart,
+  ArrowRightLeft,
+  Truck,
+  UserCircle,
+  MonitorSmartphone,
+  MapPin,
+  Receipt,
+  Percent,
+  BarChart3,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { usePermission } from '@/hooks/usePermission';
@@ -28,8 +42,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarRail,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import {
   DropdownMenu,
@@ -42,24 +54,103 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 
 const menuItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: null },
+  // Dashboard - Main
+  { 
+    path: '/dashboard', 
+    label: 'Beranda', 
+    icon: LayoutDashboard, 
+    permission: 'dashboard.view' 
+  },
+  
+  // Point of Sale
+  { 
+    path: '/pos', 
+    label: 'Kasir', 
+    icon: MonitorSmartphone,
+    permission: 'pos.view',
+  },
+
+  // Sales
+  { 
+    path: '/sales', 
+    label: 'Penjualan', 
+    icon: Receipt,
+    permission: 'sales.view',
+  },
+
+  // Discounts
+  { 
+    path: '/discounts', 
+    label: 'Diskon', 
+    icon: Percent,
+    permission: 'discounts.view',
+  },
+
+  // Master Data
+  { 
+    path: '/products', 
+    label: 'Data Master', 
+    icon: Package,
+    permission: 'products.view',
+    submenu: [
+      { path: '/products', label: 'Produk', icon: Package, permission: 'products.view' },
+      { path: '/categories', label: 'Kategori', icon: Layers3, permission: 'categories.view' },
+      { path: '/suppliers', label: 'Pemasok', icon: Truck, permission: 'suppliers.view' },
+      { path: '/customers', label: 'Pelanggan', icon: UserCircle, permission: 'customers.view' },
+    ]
+  },
+
+  // Inventory & Stock
+  { 
+    path: '/inventory', 
+    label: 'Inventori & Stok', 
+    icon: Package2,
+    permission: 'inventory.view',
+    submenu: [
+      { path: '/inventory', label: 'Ringkasan Stok', icon: Package2, permission: 'inventory.view' },
+      { path: '/storage-locations', label: 'Lokasi Penyimpanan', icon: MapPin, permission: 'storage_locations.view' },
+      { path: '/purchase-orders', label: 'Pesanan Pembelian', icon: ShoppingCart, permission: 'purchase_orders.view' },
+      { path: '/stock-transfers', label: 'Transfer Stok', icon: ArrowRightLeft, permission: 'stock_transfers.view' },
+    ]
+  },
+
+  // Location Management (Stores & Warehouses)
+  { 
+    path: '/stores', 
+    label: 'Lokasi', 
+    icon: Store,
+    permission: 'stores.view',
+    submenu: [
+      { path: '/stores', label: 'Toko', icon: Store, permission: 'stores.view' },
+      { path: '/warehouses', label: 'Gudang', icon: Warehouse, permission: 'warehouses.view' },
+    ]
+  },
+
+  // User & Access Management
   { 
     path: '/users', 
-    label: 'User Management', 
+    label: 'Pengguna & Akses', 
     icon: Users,
-    permission: 'users.read',
+    permission: 'users.view',
     submenu: [
-      { path: '/users', label: 'Users', icon: Users, permission: 'users.read' },
-      { path: '/roles', label: 'Roles', icon: Shield, permission: 'roles.read' },
-      { path: '/permissions', label: 'Permissions', icon: Lock, permission: 'roles.read' },
+      { path: '/users', label: 'Pengguna', icon: Users, permission: 'users.view' },
+      { path: '/roles', label: 'Peran', icon: Shield, permission: 'roles.view' },
+      { path: '/permissions', label: 'Hak Akses', icon: Lock, permission: 'permissions.view' },
+    ]
+  },
+
+  // Reports
+  { 
+    path: '/reports', 
+    label: 'Laporan', 
+    icon: BarChart3,
+    permission: 'reports.view',
+    submenu: [
+      { path: '/reports/sales', label: 'Laporan Penjualan', icon: Receipt, permission: 'reports.sales' },
+      { path: '/reports/inventory', label: 'Laporan Inventori', icon: Package, permission: 'reports.inventory' },
+      { path: '/reports/users', label: 'Penjualan Per Kasir', icon: Users, permission: 'reports.users' },
     ]
   },
 ];
@@ -67,7 +158,6 @@ const menuItems = [
 export function AppSidebar() {
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { state } = useSidebar();
   const { hasPermission } = usePermission();
   const [appName, setAppName] = useState(getAppName());
   const [appSubtitle, setAppSubtitle] = useState(getAppSubtitle());
@@ -109,7 +199,7 @@ export function AppSidebar() {
   });
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0">
+    <Sidebar collapsible="icon" className="border-r-0" variant="inset">
       <SidebarHeader className="">
         <SidebarMenu>
           <SidebarMenuItem>
@@ -140,69 +230,17 @@ export function AppSidebar() {
                 
                 // Menu with submenu
                 if ('submenu' in item && item.submenu) {
-                  // If sidebar collapsed, use dropdown menu
-                  if (state === 'collapsed') {
-                    return (
-                      <DropdownMenu key={item.path}>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <DropdownMenuTrigger asChild>
-                                <SidebarMenuItem>
-                                  <SidebarMenuButton isActive={isActive}>
-                                    <Icon />
-                                    <span>{item.label}</span>
-                                  </SidebarMenuButton>
-                                </SidebarMenuItem>
-                              </DropdownMenuTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                              {item.label}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <DropdownMenuContent side="right" align="start" className="w-48">
-                          {item.submenu.map((subItem: any) => {
-                            const SubIcon = subItem.icon;
-                            const isSubActive = location.pathname === subItem.path;
-                            
-                            return (
-                              <DropdownMenuItem key={subItem.path} asChild>
-                                <Link 
-                                  to={subItem.path}
-                                  className={isSubActive ? 'bg-accent' : ''}
-                                >
-                                  <SubIcon className="mr-2 h-4 w-4" />
-                                  <span>{subItem.label}</span>
-                                </Link>
-                              </DropdownMenuItem>
-                            );
-                          })}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    );
-                  }
-                  
-                  // If sidebar expanded, use collapsible
+                  // Always use collapsible for submenu (works on both mobile and desktop)
                   return (
                     <Collapsible key={item.path} asChild defaultOpen={isActive}>
                       <SidebarMenuItem>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <CollapsibleTrigger asChild>
-                                <SidebarMenuButton isActive={isActive}>
-                                  <Icon />
-                                  <span>{item.label}</span>
-                                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                                </SidebarMenuButton>
-                              </CollapsibleTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="group-data-[state=expanded]/sidebar-wrapper:hidden">
-                              {item.label}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton isActive={isActive}>
+                            <Icon className="h-4 w-4" />
+                            <span>{item.label}</span>
+                            <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
                         <CollapsibleContent>
                           <SidebarMenuSub>
                             {item.submenu.map((subItem: any) => {
@@ -211,21 +249,12 @@ export function AppSidebar() {
                               
                               return (
                                 <SidebarMenuSubItem key={subItem.path}>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <SidebarMenuSubButton asChild isActive={isSubActive}>
-                                          <Link to={subItem.path}>
-                                            <SubIcon />
-                                            <span>{subItem.label}</span>
-                                          </Link>
-                                        </SidebarMenuSubButton>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="right" className="group-data-[state=expanded]/sidebar-wrapper:hidden">
-                                        {subItem.label}
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
+                                  <SidebarMenuSubButton asChild isActive={isSubActive}>
+                                    <Link to={subItem.path}>
+                                      <SubIcon className="h-4 w-4" />
+                                      <span>{subItem.label}</span>
+                                    </Link>
+                                  </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>
                               );
                             })}
@@ -239,21 +268,12 @@ export function AppSidebar() {
                 // Simple menu item
                 return (
                   <SidebarMenuItem key={item.path}>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <SidebarMenuButton asChild isActive={isActive}>
-                            <Link to={item.path}>
-                              <Icon />
-                              <span>{item.label}</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="group-data-[state=expanded]/sidebar-wrapper:hidden">
-                          {item.label}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <SidebarMenuButton asChild isActive={isActive}>
+                      <Link to={item.path}>
+                        <Icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
               })}
@@ -282,25 +302,24 @@ export function AppSidebar() {
                 <DropdownMenuItem asChild>
                   <Link to="/account">
                     <Shield className="mr-2 h-4 w-4" />
-                    <span>Account</span>
+                    <span>Akun</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/settings">
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
+                    <span>Pengaturan</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
+                  <span>Keluar</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   );
 }

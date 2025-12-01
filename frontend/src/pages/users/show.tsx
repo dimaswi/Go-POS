@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usersApi } from '@/lib/api';
 import { usePermission } from '@/hooks/usePermission';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { ArrowLeft, Loader2, Edit, Trash2, User, Mail, Shield } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Loader2, 
+  Edit, 
+  Trash2
+} from 'lucide-react';
 import { setPageTitle } from '@/lib/page-title';
 
 export default function UserShow() {
@@ -67,18 +72,18 @@ export default function UserShow() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center h-64 sm:h-full">
+        <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <p className="text-lg font-semibold">User not found</p>
-          <Button onClick={() => navigate('/users')} className="mt-4">
+      <div className="flex items-center justify-center h-64 sm:h-full">
+        <div className="text-center px-4">
+          <p className="text-sm sm:text-lg font-semibold">User not found</p>
+          <Button onClick={() => navigate('/users')} className="mt-3 sm:mt-4 h-8 text-xs sm:text-sm">
             Back to Users
           </Button>
         </div>
@@ -87,119 +92,172 @@ export default function UserShow() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="flex flex-1 flex-col gap-3 p-3 sm:p-4 lg:p-6">
+      {/* Header with actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
           <Button 
-            variant="ghost" 
-            size="icon" 
+            variant="outline" 
+            size="icon"
             onClick={() => navigate('/users')}
-            className="h-9 w-9"
+            className="h-8 w-8 shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">User Details</h1>
-            <p className="text-sm text-muted-foreground">View user information</p>
+          <div className="min-w-0">
+            <h1 className="text-sm font-semibold truncate">Detail User</h1>
+            <span className="text-xs text-muted-foreground">#{user.id}</span>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 self-end sm:self-auto">
           {hasPermission('users.update') && (
             <Button 
-              onClick={() => navigate(`/users/${id}/edit`)}
+              variant="outline"
               size="sm"
-              className="h-9"
+              onClick={() => navigate(`/users/${id}/edit`)}
+              className="h-8 text-xs"
             >
-              <Edit className="h-3.5 w-3.5 mr-1.5" />
-              Edit
+              <Edit className="h-3.5 w-3.5 sm:mr-1" />
+              <span className="hidden sm:inline">Edit</span>
             </Button>
           )}
           {hasPermission('users.delete') && (
             <Button 
-              variant="destructive" 
-              onClick={handleDelete}
+              variant="destructive"
               size="sm"
-              className="h-9"
+              onClick={handleDelete}
               disabled={deleting}
+              className="h-8 text-xs"
             >
               {deleting ? (
-                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                <>
+                  <Trash2 className="h-3.5 w-3.5 sm:mr-1" />
+                  <span className="hidden sm:inline">Hapus</span>
+                </>
               )}
-              Delete
             </Button>
           )}
         </div>
       </div>
 
-      <Card className="shadow-md">
-        <CardHeader className="border-b bg-muted/50">
-          <CardTitle className="text-base font-semibold">User Information</CardTitle>
-          <CardDescription>Details about this user</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6 space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="space-y-2 group">
-              <div className="flex items-center gap-2">
-                <User className="h-3.5 w-3.5 text-muted-foreground" />
-                <p className="text-xs font-medium text-muted-foreground">Full Name</p>
+      {/* Single Card with Sections */}
+      <Card>
+        <CardContent className="p-3 sm:p-4 lg:p-6">
+          {/* User Information Section */}
+          <div className="mb-6">
+            <CardTitle className="text-xs text-muted-foreground font-medium mb-3">
+              INFORMASI USER
+            </CardTitle>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div>
+                <label className="text-xs text-muted-foreground">Nama</label>
+                <p className="font-medium text-sm">{user.full_name}</p>
               </div>
-              <p className="text-sm font-medium bg-muted/30 px-3 py-2 rounded-md">{user.full_name}</p>
-            </div>
-            <div className="space-y-2 group">
-              <div className="flex items-center gap-2">
-                <User className="h-3.5 w-3.5 text-muted-foreground" />
-                <p className="text-xs font-medium text-muted-foreground">Username</p>
+              <div>
+                <label className="text-xs text-muted-foreground">Username</label>
+                <p className="font-medium text-sm">{user.username}</p>
               </div>
-              <p className="text-sm font-medium bg-muted/30 px-3 py-2 rounded-md">{user.username}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="space-y-2 group">
-              <div className="flex items-center gap-2">
-                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                <p className="text-xs font-medium text-muted-foreground">Email Address</p>
+              <div>
+                <label className="text-xs text-muted-foreground">Email</label>
+                <p className="font-medium text-xs sm:text-sm truncate">{user.email}</p>
               </div>
-              <p className="text-sm font-medium bg-muted/30 px-3 py-2 rounded-md">{user.email}</p>
-            </div>
-            <div className="space-y-2 group">
-              <div className="flex items-center gap-2">
-                <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-                <p className="text-xs font-medium text-muted-foreground">Role</p>
+              <div>
+                <label className="text-xs text-muted-foreground">Status</label>
+                <Badge 
+                  variant={user.is_active ? "default" : "secondary"}
+                  className="text-xs w-fit mt-1"
+                >
+                  {user.is_active ? 'AKTIF' : 'NONAKTIF'}
+                </Badge>
               </div>
-              <p className="text-sm font-medium bg-muted/30 px-3 py-2 rounded-md">{user.role?.name || 'N/A'}</p>
             </div>
           </div>
 
-          <div className="space-y-2 group">
-            <p className="text-xs font-medium text-muted-foreground">Account Status</p>
-            <Badge
-              variant={user.is_active ? "default" : "secondary"}
-              className="text-xs"
-            >
-              {user.is_active ? 'Active' : 'Inactive'}
-            </Badge>
+          <hr className="border-border/50" />
+
+          {/* Role Information Section */}
+          <div className="my-4 sm:my-6">
+            <CardTitle className="text-xs text-muted-foreground font-medium mb-3">
+              INFORMASI ROLE
+            </CardTitle>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div>
+                <label className="text-xs text-muted-foreground">Role</label>
+                <p className="font-medium text-sm">{user.role?.name || '-'}</p>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <label className="text-xs text-muted-foreground">Deskripsi</label>
+                <p className="text-muted-foreground text-xs">
+                  {user.role?.description || 'Tidak ada deskripsi'}
+                </p>
+              </div>
+              {user.role?.permissions && (
+                <div>
+                  <label className="text-xs text-muted-foreground">Permission</label>
+                  <p className="font-medium text-sm">{user.role.permissions.length}</p>
+                </div>
+              )}
+            </div>
           </div>
 
+          <hr className="border-border/50" />
+
+          {/* System Information Section */}
+          <div className="my-4 sm:my-6">
+            <CardTitle className="text-xs text-muted-foreground font-medium mb-3">
+              INFORMASI SISTEM
+            </CardTitle>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div>
+                <label className="text-xs text-muted-foreground">ID</label>
+                <p className="font-medium text-sm">#{user.id}</p>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Dibuat</label>
+                <p className="font-medium text-xs sm:text-sm">
+                  {user.created_at ? new Date(user.created_at).toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'short', 
+                    year: 'numeric',
+                  }) : '-'}
+                </p>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Diubah</label>
+                <p className="font-medium text-xs sm:text-sm">
+                  {user.updated_at ? new Date(user.updated_at).toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric', 
+                  }) : '-'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Permissions Section */}
           {user.role?.permissions && user.role.permissions.length > 0 && (
-            <div className="space-y-3 group">
-              <p className="text-xs font-medium text-muted-foreground">
-                Permissions ({user.role.permissions.length})
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {user.role.permissions.map((perm: any) => (
-                  <Badge
-                    key={perm.id}
-                    variant="outline"
-                    className="text-xs font-mono"
-                  >
-                    {perm.name}
-                  </Badge>
-                ))}
+            <>
+              <hr className="border-border/50" />
+              <div className="mt-4 sm:mt-6">
+                <CardTitle className="text-xs text-muted-foreground font-medium mb-3">
+                  DAFTAR PERMISSION
+                  </CardTitle>
+                <div className="flex flex-wrap gap-1">
+                  {user.role.permissions.map((perm: any) => (
+                    <Badge 
+                      key={perm.id} 
+                      variant="outline" 
+                      className="text-xs font-mono"
+                    >
+                      {perm.name}
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -208,10 +266,10 @@ export default function UserShow() {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={confirmDelete}
-        title="Delete User"
-        description="Are you sure you want to delete this user? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
+        title="Hapus User"
+        description="Apakah Anda yakin ingin menghapus user ini? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Hapus"
+        cancelText="Batal"
         variant="destructive"
       />
     </div>

@@ -84,10 +84,25 @@ func RequirePermission(permission string) gin.HandlerFunc {
 			return
 		}
 
+		userID, _ := c.Get("user_id")
+
+		// Admin bypass: User ID 1 with Role ID 1 always has all permissions
+		if userID.(uint) == 1 && roleID.(uint) == 1 {
+			c.Next()
+			return
+		}
+
+		// Also bypass for any user with role name "admin" (case insensitive check)
 		var role models.Role
 		if err := database.DB.Preload("Permissions").First(&role, roleID).Error; err != nil {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Role not found"})
 			c.Abort()
+			return
+		}
+
+		// Admin role always has all permissions
+		if strings.ToLower(role.Name) == "admin" {
+			c.Next()
 			return
 		}
 
@@ -100,6 +115,63 @@ func RequirePermission(permission string) gin.HandlerFunc {
 		}
 
 		if !hasPermission {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// RequireAnyPermission checks if user has at least one of the specified permissions (OR logic)
+// This is useful for POS access where kasir needs to read stores/inventory data without full access
+func RequireAnyPermission(permissions ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		roleID, exists := c.Get("role_id")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			c.Abort()
+			return
+		}
+
+		userID, _ := c.Get("user_id")
+
+		// Admin bypass: User ID 1 with Role ID 1 always has all permissions
+		if userID.(uint) == 1 && roleID.(uint) == 1 {
+			c.Next()
+			return
+		}
+
+		// Get role with permissions
+		var role models.Role
+		if err := database.DB.Preload("Permissions").First(&role, roleID).Error; err != nil {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Role not found"})
+			c.Abort()
+			return
+		}
+
+		// Admin role always has all permissions
+		if strings.ToLower(role.Name) == "admin" {
+			c.Next()
+			return
+		}
+
+		// Check if user has at least one of the required permissions
+		hasAnyPermission := false
+		for _, requiredPerm := range permissions {
+			for _, perm := range role.Permissions {
+				if perm.Name == requiredPerm {
+					hasAnyPermission = true
+					break
+				}
+			}
+			if hasAnyPermission {
+				break
+			}
+		}
+
+		if !hasAnyPermission {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
 			c.Abort()
 			return

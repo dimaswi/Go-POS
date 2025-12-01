@@ -132,7 +132,7 @@ Setelah semua berjalan, akses aplikasi di browser:
 - **Backend API:** http://localhost:8080/api
 
 **Default Login Credentials:**
-- Email: `admin@starter.com`
+- Email: `admin@pos.com`
 - Password: `admin123`
 
 ## 📁 Struktur Project
@@ -304,6 +304,143 @@ npm run build
 ```
 
 Output ada di folder `frontend/dist` - siap untuk deploy.
+
+## 🐳 Docker Production Deployment
+
+### Prerequisite
+- Docker dan Docker Compose terinstall
+- Port 80 dan 443 tersedia
+
+### Step 1: Clone dan Setup Environment
+
+```bash
+git clone <repository-url>
+cd Go-POS
+
+# Copy dan edit file environment
+cp .env.production .env
+
+# Edit .env dengan konfigurasi production
+# WAJIB GANTI: JWT_SECRET, POSTGRES_PASSWORD
+```
+
+### Step 2: Konfigurasi Environment (.env)
+
+```env
+# PostgreSQL Database Configuration
+DATABASE_DSN=host=db user=pos_user password=your_strong_password dbname=go_pos port=5432 sslmode=disable
+
+# JWT Secret (WAJIB GANTI! Minimal 32 karakter random)
+JWT_SECRET=your_very_long_and_secure_jwt_secret_key_min_32_chars
+
+# Server
+SERVER_PORT=8080
+GIN_MODE=release
+
+# Frontend URL (ganti dengan domain production)
+FRONTEND_URL=https://yourdomain.com
+
+# PostgreSQL Container Settings
+POSTGRES_USER=pos_user
+POSTGRES_PASSWORD=your_strong_password
+POSTGRES_DB=go_pos
+```
+
+### Step 3: Build dan Deploy
+
+#### Windows (PowerShell):
+```powershell
+# Jalankan deploy script
+.\deploy.ps1 -Action start
+
+# Atau manual:
+docker-compose -f docker-compose.prod.yml --env-file .env up -d --build
+```
+
+#### Linux/Mac (Bash):
+```bash
+# Jalankan deploy script
+chmod +x deploy.sh
+./deploy.sh start
+
+# Atau manual:
+docker-compose -f docker-compose.prod.yml --env-file .env up -d --build
+```
+
+### Step 4: Verifikasi Deployment
+
+```bash
+# Cek status container
+docker-compose -f docker-compose.prod.yml ps
+
+# Cek logs backend
+docker logs pos-backend-prod
+
+# Cek logs frontend
+docker logs pos-frontend-prod
+```
+
+### Commands Penting
+
+| Command | Deskripsi |
+|---------|-----------|
+| `./deploy.sh start` | Start semua services |
+| `./deploy.sh stop` | Stop semua services |
+| `./deploy.sh restart` | Restart semua services |
+| `./deploy.sh rebuild` | Rebuild dan restart |
+| `./deploy.sh logs` | Lihat logs |
+| `./deploy.sh status` | Cek status containers |
+| `./deploy.sh clean` | Hapus containers dan images |
+
+### SSL/HTTPS Setup (Optional)
+
+1. Buat folder untuk SSL certificates:
+```bash
+mkdir -p nginx/ssl
+```
+
+2. Copy SSL certificate files:
+```bash
+cp your-cert.crt nginx/ssl/
+cp your-key.key nginx/ssl/
+```
+
+3. Update `frontend/nginx.conf` untuk enable HTTPS
+
+### Akses Aplikasi
+
+- **URL:** http://localhost (atau domain anda)
+- **API:** http://localhost/api
+
+### 👤 Default Admin User
+
+Saat pertama kali dijalankan, sistem akan otomatis membuat:
+
+| Field | Value |
+|-------|-------|
+| Email | `admin@pos.com` |
+| Password | `admin123` |
+| Role | `admin` |
+| Permissions | ALL (semua permissions) |
+
+⚠️ **PENTING:** Ganti password admin segera setelah first login!
+
+### Struktur Files Deployment
+
+```
+Go-POS/
+├── .env.production          # Template environment file
+├── docker-compose.prod.yml  # Docker Compose production
+├── deploy.sh               # Deploy script Linux/Mac
+├── deploy.ps1              # Deploy script Windows
+├── backend/
+│   ├── Dockerfile          # Backend Docker image
+│   └── .dockerignore       # Exclude files from build
+└── frontend/
+    ├── Dockerfile          # Frontend Docker image
+    ├── nginx.conf          # Nginx configuration
+    └── .dockerignore       # Exclude files from build
+```
 
 ## 🐛 Troubleshooting
 
