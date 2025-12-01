@@ -53,7 +53,7 @@ export default function ProductsIndex() {
       setProducts(response.data.data);
       setPagination((prev) => ({
         ...prev,
-        total: response.data.meta?.total || 0,
+        total: response.data.pagination?.total || response.data.meta?.total || 0,
       }));
     } catch (error: any) {
       toast({
