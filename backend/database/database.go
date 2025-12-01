@@ -22,43 +22,83 @@ func Connect(dsn string) error {
 }
 
 func Migrate() error {
-	// Run auto-migrate for schema updates
+	// Step 1: Create base tables WITHOUT foreign key constraints first
+	// Disable foreign key checks temporarily
+	DB.Exec("SET session_replication_role = 'replica';")
+
+	// Migrate in correct order - base tables first
+	// 1. Tables with no dependencies
 	err := DB.AutoMigrate(
-		&models.Role{},           // First, roles
-		&models.Permission{},     // Then permissions
-		&models.RolePermission{}, // Junction table
-		&models.User{},           // Then users (depends on roles)
-		&models.Setting{},        // Settings
-
-		// POS System models
-		&models.Store{},                // Stores
-		&models.Warehouse{},            // Warehouses (depends on stores)
-		&models.StorageLocation{},      // Storage locations (depends on stores, warehouses)
-		&models.Category{},             // Product categories
-		&models.Product{},              // Products (depends on categories)
-		&models.ProductVariant{},       // Product variants (depends on products)
-		&models.Inventory{},            // Inventory (depends on products, warehouses)
-		&models.StoreInventory{},       // Store inventory (depends on products, stores)
-		&models.InventoryTransaction{}, // Inventory transactions
-		&models.Supplier{},             // Suppliers
-		&models.PurchaseOrder{},        // Purchase orders (depends on warehouses, suppliers, users)
-		&models.PurchaseOrderItem{},    // Purchase order items (depends on purchase orders, products)
-		&models.StockTransfer{},        // Stock transfers (depends on warehouses)
-		&models.StockTransferItem{},    // Stock transfer items
-		&models.Customer{},             // Customers
-		&models.Sale{},                 // Sales (depends on stores, customers, users)
-		&models.SaleItem{},             // Sale items (depends on sales, products)
-		&models.SalePayment{},          // Sale payments (depends on sales)
-		&models.FinancialAccount{},     // Financial accounts
-		&models.JournalEntry{},         // Journal entries (depends on users)
-		&models.JournalEntryLine{},     // Journal entry lines (depends on journal entries, accounts)
-		&models.Discount{},             // Discounts
-		&models.DiscountUsage{},        // Discount usage tracking
+		&models.Role{},
+		&models.Permission{},
+		&models.Setting{},
+		&models.Category{},
+		&models.Supplier{},
+		&models.Customer{},
+		&models.FinancialAccount{},
 	)
-
 	if err != nil {
 		return err
 	}
+
+	// 2. Junction tables and tables depending on step 1
+	err = DB.AutoMigrate(
+		&models.RolePermission{},
+		&models.User{}, // Depends on Role
+	)
+	if err != nil {
+		return err
+	}
+
+	// 3. Tables depending on User
+	err = DB.AutoMigrate(
+		&models.Store{},     // Has ManagerID -> User
+		&models.Warehouse{}, // Has ManagerID -> User, StoreID -> Store
+	)
+	if err != nil {
+		return err
+	}
+
+	// 4. Tables depending on Store/Warehouse
+	err = DB.AutoMigrate(
+		&models.StorageLocation{}, // Depends on Store, Warehouse
+		&models.Product{},         // Depends on Category
+		&models.Discount{},        // Depends on Store (optional)
+	)
+	if err != nil {
+		return err
+	}
+
+	// 5. Tables depending on Product
+	err = DB.AutoMigrate(
+		&models.ProductVariant{},
+		&models.Inventory{},            // Depends on Product, Warehouse
+		&models.StoreInventory{},       // Depends on Product, Store
+		&models.InventoryTransaction{}, // Depends on Product, Warehouse
+	)
+	if err != nil {
+		return err
+	}
+
+	// 6. Order/Transaction tables
+	err = DB.AutoMigrate(
+		&models.PurchaseOrder{},     // Depends on Warehouse, Supplier, User
+		&models.PurchaseOrderItem{}, // Depends on PurchaseOrder, Product
+		&models.StockTransfer{},     // Depends on Warehouse
+		&models.StockTransferItem{}, // Depends on StockTransfer, Product
+		&models.Sale{},              // Depends on Store, Customer, User
+		&models.SaleItem{},          // Depends on Sale, Product
+		&models.SalePayment{},       // Depends on Sale
+		&models.JournalEntry{},      // Depends on User
+		&models.JournalEntryLine{},  // Depends on JournalEntry, FinancialAccount
+		&models.DiscountUsage{},     // Depends on Discount, Sale, Customer
+	)
+	if err != nil {
+		return err
+	}
+
+	// Re-enable foreign key checks
+	DB.Exec("SET session_replication_role = 'origin';")
 
 	log.Println("Database migrated successfully")
 	return nil
