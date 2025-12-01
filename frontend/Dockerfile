@@ -9,6 +9,9 @@ RUN npm install
 # Copy source code
 COPY . .
 
+# Set API URL to use relative path (will be proxied by nginx)
+ENV VITE_API_URL=/api
+
 # Build the application
 RUN npm run build
 
