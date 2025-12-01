@@ -30,8 +30,10 @@ services:
     container_name: pos-backend
     environment:
       DATABASE_DSN: "host=postgres user=dimaswisnu password=dimasw1950 dbname=db_go_pos port=5432 sslmode=disable"
-      JWT_SECRET: "your-secret-key-change-in-production"
+      JWT_SECRET: "dev-secret-key-for-local-development-only"
       SERVER_PORT: "8080"
+      FRONTEND_URL: "http://147.93.104.139:3211"
+      GIN_MODE: "release"
     ports:
       - "8055:8080"
     depends_on:
